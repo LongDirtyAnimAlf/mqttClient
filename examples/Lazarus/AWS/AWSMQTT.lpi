@@ -5,7 +5,7 @@
     <PathDelim Value="\"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="project1"/>
+      <Title Value="AWSMQTT"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
@@ -21,7 +21,7 @@
           <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
-            <Filename Value="bin\$NameOnly($(ProjFile))-$(TargetCPU)-$(TargetOS)"/>
+            <Filename Value="$NameOnly($(ProjFile))-$(TargetCPU)-$(TargetOS)"/>
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir);..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>
@@ -62,7 +62,7 @@
     </RequiredPackages>
     <Units>
       <Unit>
-        <Filename Value="project1.lpr"/>
+        <Filename Value="AWSMQTT.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -79,7 +79,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="bin\$NameOnly($(ProjFile))-$(TargetCPU)-$(TargetOS)-debug"/>
+      <Filename Value="$NameOnly($(ProjFile))-$(TargetCPU)-$(TargetOS)-debug"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>

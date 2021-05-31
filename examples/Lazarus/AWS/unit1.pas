@@ -31,12 +31,16 @@ var
 
 implementation
 
+uses
+  ssl_openssl_lib;
+
 {$R *.lfm}
 
 { TForm1 }
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
+  if (NOT IsSSLloaded) then InitSSLInterface;
   MyMQTTClient:=TMQTTClient.Create;
   MyMQTTClient.ClientId:='SOHIT_Climate_Lab1';
   MyMQTTClient.Host:='a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com';
@@ -47,7 +51,7 @@ begin
   MyMQTTClient.SSLUse:=True;
   MyMQTTClient.AddTimeStamp:=True;
   //MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update');
-  MyMQTTClient.Resume;
+  MyMQTTClient.Start;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
