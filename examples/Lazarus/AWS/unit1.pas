@@ -5,7 +5,7 @@ unit Unit1;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
   mqttClient;
 
 type
@@ -16,9 +16,11 @@ type
     Button1: TButton;
     Button2: TButton;
     Memo1: TMemo;
+    Timer1: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
   private
 
   public
@@ -51,6 +53,8 @@ begin
   MyMQTTClient.SSLUse:=True;
   MyMQTTClient.AddTimeStamp:=True;
   //MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update');
+  MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/accepted');
+  MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/rejected');
   MyMQTTClient.Start;
 end;
 
@@ -66,6 +70,24 @@ begin
     MyMQTTClient.Terminate;
     MyMQTTClient.WaitFor;
     MyMQTTClient.Destroy;
+  end;
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+var
+  aMessage: TMQTTMessage;
+begin
+  if Assigned(MyMQTTClient) then
+  begin
+    repeat
+      aMessage:=MyMQTTClient.GetMessage;
+      if Assigned(aMessage) then
+      begin
+        Memo1.Lines.Append(aMessage.FTopic+': '+aMessage.FMessage);
+        aMessage.Free;
+      end
+      else break;
+    until false;
   end;
 end;
 

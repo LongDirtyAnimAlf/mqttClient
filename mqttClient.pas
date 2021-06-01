@@ -11,13 +11,19 @@ unit mqttClient;
 interface
 
 uses
-  SysUtils, Classes,contnrs, SyncObjs,
+  SysUtils, Classes, Contnrs, SyncObjs,
   BlckSock, NBlockSock, ssl_openssl;
 
-const MAXRecMessagesCount = 1000;                                               // максимальное количество непрочтенных сообщений
-      MAXPubMessagesCount = 4000;                                               // максимальное количество сообщений на отправку
+const
+  MAXRecMessagesCount = 1000;
+  MAXPubMessagesCount = 4000;
 
-type TMQTTMessageType = (
+type
+  TErrorHook = procedure(Sender: TObject; const Value: Integer; const Desc: String) of object;
+  TConnectHook = procedure(Sender: TObject) of object;
+  TDisconnectHook = procedure(Sender: TObject) of object;
+
+  TMQTTMessageType = (
       mtReserved0 = 0,                                                          // Reserved
       mtCONNECT = 1,                                                            // Client request to connect to Broker
       mtCONNACK = 2,                                                            // Connect Acknowledgment
@@ -112,6 +118,10 @@ type TMQTTMessageType = (
        FPrivateKeyFile: String;
        FCertificateFile: String;
        //
+       FOnError: TErrorHook;
+       FOnConnect: TConnectHook;
+       FOnDisconnect: TDisconnectHook;
+       //
        procedure DoConnect;
        procedure DoLogin;
        procedure AfterLogin;
@@ -133,6 +143,10 @@ type TMQTTMessageType = (
        //
        function NeedTerminate(Sender: TObject; Time: Integer): Boolean;
        procedure SetLastErrorMessage(const S: String);
+
+       procedure DoOnConnect;
+       procedure DoOnDisconnect;
+       procedure DoOnError;
       public
        constructor Create;
        destructor Destroy; override;
@@ -159,6 +173,10 @@ type TMQTTMessageType = (
        property SSLCertCAFile: String read FSSLCertCAFile write FSSLCertCAFile;
        property SSLPrivateKeyFile: String read FPrivateKeyFile write FPrivateKeyFile;
        property SSLCertificateFile: String read FCertificateFile write FCertificateFile;
+
+       property OnError: TErrorHook read FOnError write FOnError;
+       property OnConnect: TConnectHook read FOnConnect write FOnConnect;
+       property OnDisconnect: TDisconnectHook read FOnDisconnect write FOnDisconnect;
       protected
        procedure Execute; override;
      end;
@@ -335,9 +353,11 @@ begin
  DoDisconnect(True);
  //
  FreeAndNil(FSendMessages);
- while FPubMessages.Count > 0 do FPubMessages.Pop.Free;
+
+ while (FPubMessages.Count>0) do TMQTTMessage(FPubMessages.Pop).Free;
  FreeAndNil(FPubMessages);
- while FRecMessages.Count > 0 do FRecMessages.Pop.Free;
+
+ while (FRecMessages.Count>0) do TMQTTMessage(FRecMessages.Pop).Free;
  FreeAndNil(FRecMessages);
  //
  FreeAndNil(FSubscribeList);
@@ -439,8 +459,6 @@ begin
 end;
 
 procedure TMQTTClient.DoConnect;
-var
-  s:string;
 begin
   {$IFDEF DEBUG_MQTT}
   AddLog(LOG_DEBUG, 'TMQTTClient.DoConnect');
@@ -477,13 +495,12 @@ begin
     //
     FTCP.SSLDoConnect;
     FTCP.SSL.SNIHost := '';
-    s :=FTCP.GetErrorDescEx;
     {$IFDEF DEBUG_MQTT}
     AddLog(LOG_INFO, Format('MQTTClient: SSL/TLS connection established, version: %s', [FTCP.SSL.GetSSLVersion()]));
     {$ENDIF}
   end;
   FWaitPINGRESP:= False;
-  FConnected:= True;
+  FConnected:=(FTCP.LastError=0);
 end;
 
 procedure TMQTTClient.DoLogin;
@@ -635,13 +652,14 @@ procedure TMQTTClient.DoReceive;
 var
   RecData: TControlPacket;
   SI: TSubscribeItem;
+  aMQTTMessage:TMQTTMessage;
   AppMessage: String;
   TopicName: String;
   Index: Integer;
   PacketId: Word;
   I: Integer;
 begin
-  FillChar({%H-}RecData,SizeOf(TControlPacket),0);
+  FillChar({%H-}RecData,SizeOf(RecData),0);
   if ReceiveControlPacket({%H-}RecData) then
   begin
     Case FixedHeaderType(RecData.FH) of
@@ -684,7 +702,12 @@ begin
         {$ENDIF}
         FCritSection.Enter;
         try
-          if FRecMessages.Count < MAXRecMessagesCount then FRecMessages.Push(TMQTTMessage.Create(TopicName, AppMessage, RecData.RQoS, RecData.RRetain, PacketId));
+          if (FRecMessages.Count<MAXRecMessagesCount) then
+          begin
+            aMQTTMessage:=TMQTTMessage.Create(TopicName, AppMessage, RecData.RQoS, RecData.RRetain, PacketId);
+            FRecMessages.Push(aMQTTMessage);
+            //Inc(FReceivedCount);
+          end;
           Inc(FReceivedCount);
         finally
           FCritSection.Leave;
@@ -785,6 +808,12 @@ begin
   begin
     try
       DoConnect;
+      if (NOT FConnected) then
+      begin
+        Synchronize(@DoOnError);
+        exit;
+      end
+      else Synchronize(@DoOnConnect);
       DoLogin;
       while not Terminated do
       begin
@@ -846,7 +875,10 @@ function TMQTTClient.GetMessage: TMQTTMessage;
 begin
   FCritSection.Enter;
   try
-    if FRecMessages.Count > 0 then result:= TMQTTMessage(FRecMessages.Pop) else result:= Nil;
+    if (FRecMessages.Count>0) then
+      result:= TMQTTMessage(FRecMessages.Pop)
+    else
+      result:= nil;
   finally
     FCritSection.Leave;
   end;
@@ -916,6 +948,24 @@ begin
   finally
     FCritSection.Leave;
   end;
+end;
+
+procedure TMQTTClient.DoOnConnect;
+begin
+  if (FOnConnect <> nil) then
+    FOnConnect(Self);
+end;
+
+procedure TMQTTClient.DoOnDisconnect;
+begin
+  if FOnDisconnect <> nil then
+    FOnDisconnect(Self);
+end;
+
+procedure TMQTTClient.DoOnError;
+begin
+  if FOnError <> nil then
+    FOnError(Self, FTCP.LastError, FTCP.LastErrorDesc);
 end;
 
 end.
