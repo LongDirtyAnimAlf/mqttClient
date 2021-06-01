@@ -1,4 +1,4 @@
-unit mqttClient;
+﻿unit mqttClient;
 
 // Original sources by Alexey Lutovinin
 // https://github.com/crossrw/mqttClient
@@ -8,18 +8,18 @@ unit mqttClient;
 interface
 
 uses
+  {$ifndef FPC}
+  Windows,
+  {$endif}
   SysUtils, Classes, Contnrs, SyncObjs,
+  {$ifdef FPC}
   eventlog,
+  {$endif FPC}
   BlckSock, NBlockSock, ssl_openssl;
 
 const
   MAXRecMessagesCount = 1000;
   MAXPubMessagesCount = 4000;
-
-  LOG_DEBUG   = etDebug;
-  LOG_INFO    = etInfo;
-  LOG_WARNING = etWarning;
-  LOG_ERR     = etError;
 
 type
   TErrorHook = procedure(Sender: TObject; const Value: Integer; const Desc: String) of object;
@@ -125,8 +125,10 @@ type
        FOnConnect: TConnectHook;
        FOnDisconnect: TDisconnectHook;
        //
+       {$ifdef FPC}
        FLog:TEventLog;
-       //
+       {$endif FPC}
+        //
        procedure DoConnect;
        procedure DoLogin;
        procedure AfterLogin;
@@ -153,7 +155,9 @@ type
        procedure DoOnDisconnect;
        procedure DoOnError;
 
-       procedure AddLog(EventType : TEventType; const Msg : String);
+       {$ifdef FPC}
+        procedure AddLog(EventType : TEventType; const Msg : String);
+       {$endif FPC}
     public
        constructor Create;
        destructor Destroy; override;
@@ -193,6 +197,48 @@ implementation
 uses
   DateUtils,
   SynaUtil, SynaChar;
+
+const
+  {$ifdef FPC}
+  LOG_DEBUG   = etDebug;
+  LOG_INFO    = etInfo;
+  LOG_WARNING = etWarning;
+  LOG_ERR     = etError;
+  {$else}
+  LOG_DEBUG   = 1;
+  LOG_INFO    = 2;
+  LOG_WARNING = 3;
+  LOG_ERR     = 4;
+  {$endif FPC}
+
+{$ifndef FPC}
+procedure AddLog(Level:integer; Msg:string);
+const
+  LOGFILE = 'delphilog.txt';
+var
+  F:TextFile;
+begin
+  AssignFile(F, LOGFILE);
+  try
+    if NOT FileExists(LOGFILE) then
+      Rewrite(F)
+    else
+      Append(F);
+    write(F,'['+DateTimeToStr(Now)+' ');
+    case Level of
+      1:write(F,'DEBUG  ');
+      2:write(F,'INFO   ');
+      3:write(F,'WARNING');
+      4:write(F,'ERROR  ');
+      else write(F,'UNKNOWN');
+    end;
+    write(F,'] ');
+    writeln(F,Msg);
+  finally
+    CloseFile(F);
+  end;
+end;
+{$endif}
 
 type
   TSubscribeItem = class
@@ -304,9 +350,11 @@ constructor TMQTTClient.Create;
 begin
   inherited Create(True);
   //
+  {$ifdef FPC}
   FLog:=TEventLog.Create(nil);
   FLog.LogType:=ltFile;
   FLog.FileName:='mqttdebug.log';
+  {$endif FPC}
   //
   FHost:= '';
   FPort:= 1883;
@@ -329,7 +377,7 @@ begin
   FTCP.ConnectQuantum:= 200;
   FTCP.RaiseExcept:= True;
   FTCP.Family:= SF_IP4;
-  FTCP.OnCheckConnectBreak:= @NeedTerminate;
+  FTCP.OnCheckConnectBreak:={$ifdef FPC}@{$endif FPC}NeedTerminate;
   //
   FCritSection:= TCriticalSection.Create;
   FSubscribeList:= TObjectList.Create;
@@ -373,7 +421,9 @@ begin
   FreeAndNil(FCritSection);
   FreeAndNil(FTCP);
 
-  FLog.Destroy;;
+  {$ifdef FPC}
+  FLog.Destroy;
+  {$endif FPC}
 end;
 
 // возвращает строку с добавленными в начале двумя байтами длинны
@@ -451,10 +501,19 @@ begin
 end;
 
 function TMQTTClient.UTCTimeStamp: String;
+{$ifndef FPC}
+const
+  StartOfEpoch = 25569;
+var
+  st: TSystemTime;
+{$endif}
 begin
-  //result:= Format('@%d%.3d', [SecondsBetween(GetPreciseUTTime(), StartOfEpoch), GetTick mod 1000]);
+  {$ifdef FPC}
   result:= Format('@%d%.3d', [SecondsBetween(NowUTC, UnixDateDelta), GetTick mod 1000]);
-  //result:= Format('@%d%.3d', [NowUTC]);
+  {$else}
+  GetSystemTime(st);
+  result:= Format('@%d%.3d', [SecondsBetween(SysUtils.SystemTimeToDateTime (st), StartOfEpoch), GetTick mod 1000]);
+  {$endif FPC}
 end;
 
 function TMQTTClient.NeedTerminate(Sender: TObject; Time: Integer): Boolean;
@@ -499,7 +558,6 @@ begin
     begin
       FTCP.SSL.SNIHost := Self.Host;
     end;
-    FTCP.SSL.VerifyCert:=false;
     FTCP.SSL.PrivateKeyFile := FPrivateKeyFile;
     FTCP.SSL.CertificateFile := FCertificateFile;
     FTCP.SSL.SSLType := LT_TLSv1_2;
@@ -821,10 +879,10 @@ begin
       DoConnect;
       if (NOT FConnected) then
       begin
-        Synchronize(@DoOnError);
+        Synchronize({$ifdef FPC}@{$endif FPC}DoOnError);
         exit;
       end
-      else Synchronize(@DoOnConnect);
+      else Synchronize({$ifdef FPC}@{$endif FPC}DoOnConnect);
       DoLogin;
       while not Terminated do
       begin
@@ -963,25 +1021,27 @@ end;
 
 procedure TMQTTClient.DoOnConnect;
 begin
-  if (FOnConnect <> nil) then
+  if Assigned(FOnConnect) then
     FOnConnect(Self);
 end;
 
 procedure TMQTTClient.DoOnDisconnect;
 begin
-  if FOnDisconnect <> nil then
+  if Assigned(FOnDisconnect) then
     FOnDisconnect(Self);
 end;
 
 procedure TMQTTClient.DoOnError;
 begin
-  if FOnError <> nil then
+  if Assigned(FOnError) then
     FOnError(Self, FTCP.LastError, FTCP.LastErrorDesc);
 end;
 
+{$ifdef FPC}
 procedure TMQTTClient.AddLog(EventType : TEventType; const Msg : String);
 begin
   FLog.Log(EventType,Msg);
 end;
+{$endif FPC}
 
 end.

@@ -1,0 +1,31 @@
+[1-6-2021 09:17:50 DEBUG  ] TMQTTClient.Execute
+[1-6-2021 09:17:50 DEBUG  ] TMQTTClient.DoConnect
+[1-6-2021 09:17:50 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[1-6-2021 09:17:50 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[1-6-2021 09:17:50 DEBUG  ] TMQTTClient.DoLogin
+[1-6-2021 09:17:50 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:20
+[1-6-2021 09:17:50 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[1-6-2021 09:17:50 INFO   ] TMQTTClient: connection accepted
+[1-6-2021 09:17:53 DEBUG  ] TMQTTClient.SendCtrlPacket(PUBLISH), FH:30 VHlen:46 PayloadLen:9
+[1-6-2021 09:17:56 INFO   ] TMQTTClient.DoDisconnect
+[1-6-2021 09:17:56 DEBUG  ] TMQTTClient.SendCtrlPacket(DISCONNECT), FH:E0 VHlen:0 PayloadLen:0
+[1-6-2021 09:24:46 DEBUG  ] TMQTTClient.Execute
+[1-6-2021 09:24:46 DEBUG  ] TMQTTClient.DoConnect
+[1-6-2021 09:24:47 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[1-6-2021 09:24:47 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[1-6-2021 09:24:47 DEBUG  ] TMQTTClient.DoLogin
+[1-6-2021 09:24:47 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:20
+[1-6-2021 09:24:47 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[1-6-2021 09:24:47 INFO   ] TMQTTClient: connection accepted
+[1-6-2021 09:25:00 DEBUG  ] TMQTTClient.SendCtrlPacket(PUBLISH), FH:30 VHlen:46 PayloadLen:23
+[1-6-2021 09:25:06 INFO   ] TMQTTClient.DoDisconnect
+[1-6-2021 09:25:06 DEBUG  ] TMQTTClient.SendCtrlPacket(DISCONNECT), FH:E0 VHlen:0 PayloadLen:0
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.Execute
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.DoConnect
+[1-6-2021 09:25:37 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[1-6-2021 09:25:37 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.DoLogin
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:20
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[1-6-2021 09:25:37 INFO   ] TMQTTClient: connection accepted
+[1-6-2021 09:25:37 DEBUG  ] TMQTTClient.SendCtrlPacket(SUBSCRIBE), FH:82 VHlen:2 PayloadLen:47
