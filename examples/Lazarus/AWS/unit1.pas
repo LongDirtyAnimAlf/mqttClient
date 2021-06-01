@@ -22,7 +22,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
-
+    procedure ConnectionSuccess(Sender: TObject);
   public
 
   end;
@@ -52,9 +52,10 @@ begin
   MyMQTTClient.SSLPrivateKeyFile:=Application.Location+'Lab1Credentials\324ddf45b4-private.pem.key';
   MyMQTTClient.SSLUse:=True;
   MyMQTTClient.AddTimeStamp:=True;
-  //MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update');
+  MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update');
   MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/accepted');
   MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/rejected');
+  MyMQTTClient.OnConnect:=@ConnectionSuccess;
   MyMQTTClient.Start;
 end;
 
@@ -89,6 +90,11 @@ begin
       else break;
     until false;
   end;
+end;
+
+procedure TForm1.ConnectionSuccess(Sender: TObject);
+begin
+  Memo1.Lines.Append('Connected');
 end;
 
 end.

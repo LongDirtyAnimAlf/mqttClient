@@ -1,22 +1,25 @@
-//
-// MQTT v3.1.1
-//
-
-//{$i edefines.inc}
-
 unit mqttClient;
 
-{not $DEFINE DEBUG_MQTT}
+// Original sources by Alexey Lutovinin
+// https://github.com/crossrw/mqttClient
+
+{$DEFINE DEBUG_MQTT}
 
 interface
 
 uses
   SysUtils, Classes, Contnrs, SyncObjs,
+  eventlog,
   BlckSock, NBlockSock, ssl_openssl;
 
 const
   MAXRecMessagesCount = 1000;
   MAXPubMessagesCount = 4000;
+
+  LOG_DEBUG   = etDebug;
+  LOG_INFO    = etInfo;
+  LOG_WARNING = etWarning;
+  LOG_ERR     = etError;
 
 type
   TErrorHook = procedure(Sender: TObject; const Value: Integer; const Desc: String) of object;
@@ -42,7 +45,7 @@ type
       mtReserved15 = 15                                                         // Reserved
      );
 
-     TMQTTStatus = record
+  TMQTTStatus = record
       Connected: Boolean;
       LastErrorMsg: String;
       InBufferCount: Integer;
@@ -50,11 +53,11 @@ type
       ReceivedCount: LongWord;
       PublishedCount: LongWord;
       DroppedCount: LongWord;
-     end;
+  end;
 
-     MQTTException = exception;
+  MQTTException = exception;
 
-     TControlPacket = record
+  TControlPacket = record
       FH: Byte;
       VH: String;
       Payload: String;
@@ -62,23 +65,23 @@ type
       RQoS: Byte;
       RDup: Boolean;
       RRetain: Boolean;
-     end;
+  end;
 
-     TMQTTMessage = class
-      private
+  TMQTTMessage = class
+    private
        FSendFlag: Boolean;
        FPacketId: Word;
-      public
+    public
        FTopic: String;
        FMessage: String;
        FRetain: Boolean;
        FQoS: Byte;
        //
        constructor Create(const ATopic, AMessage: String; AQoS: Byte; ARetain: Boolean; APacketId: Word);
-     end;
+  end;
 
-     TMQTTClient = class(TThread)
-      private
+  TMQTTClient = class(TThread)
+    private
        FHost: String;
        FPort: Word;
        FUserName: String;
@@ -122,6 +125,8 @@ type
        FOnConnect: TConnectHook;
        FOnDisconnect: TDisconnectHook;
        //
+       FLog:TEventLog;
+       //
        procedure DoConnect;
        procedure DoLogin;
        procedure AfterLogin;
@@ -147,7 +152,9 @@ type
        procedure DoOnConnect;
        procedure DoOnDisconnect;
        procedure DoOnError;
-      public
+
+       procedure AddLog(EventType : TEventType; const Msg : String);
+    public
        constructor Create;
        destructor Destroy; override;
        //
@@ -177,19 +184,15 @@ type
        property OnError: TErrorHook read FOnError write FOnError;
        property OnConnect: TConnectHook read FOnConnect write FOnConnect;
        property OnDisconnect: TDisconnectHook read FOnDisconnect write FOnDisconnect;
-      protected
+    protected
        procedure Execute; override;
-     end;
+  end;
 
 implementation
 
 uses
-  //openssl,
-{$if DEFINED(FPC_FULLVERSION) AND (FPC_FULLVERSION >= 30200)}
-  //opensslsockets,
-{$ENDIF}
-  SynaUtil, SynaChar,
-  DateUtils;
+  DateUtils,
+  SynaUtil, SynaChar;
 
 type
   TSubscribeItem = class
@@ -203,34 +206,36 @@ type
   end;
 
 function RemainingLength(MsgLen: Integer): String;
-var Digit: Integer;
-    R: String;
+var
+  Digit: Integer;
+  R: String;
 begin
- R:= '';
- repeat
-  Digit:= MsgLen mod 128;
-  MsgLen:= MsgLen div 128;
-  if MsgLen > 0 then Digit:= Digit or $80;
-  R:= R + Char(Digit);
- until MsgLen = 0;
- result:= R;
+  R:= '';
+  repeat
+    Digit:= MsgLen mod 128;
+    MsgLen:= MsgLen div 128;
+    if MsgLen > 0 then Digit:= Digit or $80;
+    R:= R + Char(Digit);
+  until MsgLen = 0;
+  result:= R;
 end;
 
 function FixedHeader(AMessageType: TMQTTMessageType; ADup: Boolean; AQOS: Byte; ARetain: Boolean): Byte;
-var FH: Byte;
+var
+  FH: Byte;
 begin
-// |7 6 5 4  | 3    | 2  1 | 0      |
-// |Message  | DUP  | QoS  | RETAIN |
-// |type     | flag |      |        |
- FH:= Byte(Ord(AMessageType) shl 4) + (AQoS shl 1);
- if ARetain then FH:= FH or 1;
- if ADup then FH:= FH or 8;
- result:= FH;
+  // |7 6 5 4  | 3    | 2  1 | 0      |
+  // |Message  | DUP  | QoS  | RETAIN |
+  // |type     | flag |      |        |
+  FH:= Byte(Ord(AMessageType) shl 4) + (AQoS shl 1);
+  if ARetain then FH:= FH or 1;
+  if ADup then FH:= FH or 8;
+  result:= FH;
 end;
 
 function FixedHeaderType(FH: Byte): TMQTTMessageType;
 begin
- result:= TMQTTMessageType(FH shr 4);
+  result:= TMQTTMessageType(FH shr 4);
 end;
 
 function StrToMQTT(const S: String): String;
@@ -266,103 +271,109 @@ end;
 
 constructor TSubscribeItem.Create(const ATopic: String);
 begin
- inherited Create;
- //
- FTopic:= ATopic;
- Reset;
+  inherited Create;
+  //
+  FTopic:= ATopic;
+  Reset;
 end;
 
 procedure TSubscribeItem.Reset;
 begin
- FSended:= False;
- FAck:= False;
- FPacketId:=0;
+  FSended:= False;
+  FAck:= False;
+  FPacketId:=0;
 end;
 
 // -----------------------------------------------------------------------------
 
 constructor TMQTTMessage.Create(const ATopic, AMessage: String; AQoS: Byte; ARetain: Boolean; APacketId: Word);
 begin
- inherited Create;
- //
- FTopic:= ATopic;
- FMessage:= AMessage;
- FQoS:= AQoS;
- FRetain:= ARetain;
- FPacketId:= APacketId;
- FSendFlag:= False;
+  inherited Create;
+  //
+  FTopic:= ATopic;
+  FMessage:= AMessage;
+  FQoS:= AQoS;
+  FRetain:= ARetain;
+  FPacketId:= APacketId;
+  FSendFlag:= False;
 end;
 
 // -----------------------------------------------------------------------------
 
 constructor TMQTTClient.Create;
 begin
- inherited Create(True);
- //
- FHost:= '';
- FPort:= 1883;
- FLastErrorMessage:= '';
- //
- FUserName:= '';
- FPassword:= '';
- FWillTopic:= '';
- FWillMessage:= '';
- FLastControlSend:= 0;
- FLastControlRecv:= 0;
- FWaitPINGRESP:= False;
- FKeepAlive:= 0;
- FWillQoS:= 0;
- FClientId:= 'client' + IntToStr(Random(MaxInt) + 1);
- FPacketId:= 1;
- FAddTimeStamp:= False;
- //
- FTCP:= TTCPNBlockSocket.Create;
- FTCP.ConnectQuantum:= 200;
- FTCP.RaiseExcept:= True;
- FTCP.Family:= SF_IP4;
- FTCP.OnCheckConnectBreak:= @NeedTerminate;
- //
- FCritSection:= TCriticalSection.Create;
- FSubscribeList:= TObjectList.Create;
- FSubscribeListChanged:= False;
- FRecMessages:= TObjectQueue.Create;
- //
- FPubMessages:= TObjectQueue.Create;
- FSendMessages:= TObjectList.Create;
- FSendMessagesChanged:= False;
- FBuffering:= False;
- //
- FUseSSL:= False;
- FSSLCertCAFile:= '';
- FPrivateKeyFile:= '';
- FCertificateFile:= '';
- //
- FPublishedCount:= 0;
- FReceivedCount:= 0;
- FDroppedCount:= 0;
- //
- FTimeOut:= 5000;
- FConnected:= False;
- FLoggedIn:= False;
+  inherited Create(True);
+  //
+  FLog:=TEventLog.Create(nil);
+  FLog.LogType:=ltFile;
+  FLog.FileName:='mqttdebug.log';
+  //
+  FHost:= '';
+  FPort:= 1883;
+  FLastErrorMessage:= '';
+  //
+  FUserName:= '';
+  FPassword:= '';
+  FWillTopic:= '';
+  FWillMessage:= '';
+  FLastControlSend:= 0;
+  FLastControlRecv:= 0;
+  FWaitPINGRESP:= False;
+  FKeepAlive:= 0;
+  FWillQoS:= 0;
+  FClientId:= 'client' + IntToStr(Random(MaxInt) + 1);
+  FPacketId:= 1;
+  FAddTimeStamp:= False;
+  //
+  FTCP:= TTCPNBlockSocket.Create;
+  FTCP.ConnectQuantum:= 200;
+  FTCP.RaiseExcept:= True;
+  FTCP.Family:= SF_IP4;
+  FTCP.OnCheckConnectBreak:= @NeedTerminate;
+  //
+  FCritSection:= TCriticalSection.Create;
+  FSubscribeList:= TObjectList.Create;
+  FSubscribeListChanged:= False;
+  FRecMessages:= TObjectQueue.Create;
+  //
+  FPubMessages:= TObjectQueue.Create;
+  FSendMessages:= TObjectList.Create;
+  FSendMessagesChanged:= False;
+  FBuffering:= False;
+  //
+  FUseSSL:= False;
+  FSSLCertCAFile:= '';
+  FPrivateKeyFile:= '';
+  FCertificateFile:= '';
+  //
+  FPublishedCount:= 0;
+  FReceivedCount:= 0;
+  FDroppedCount:= 0;
+  //
+  FTimeOut:= 5000;
+  FConnected:= False;
+  FLoggedIn:= False;
 end;
 
 destructor TMQTTClient.Destroy;
 begin
- inherited;
- //
- DoDisconnect(True);
- //
- FreeAndNil(FSendMessages);
+  inherited;
+  //
+  DoDisconnect(True);
+  //
+  FreeAndNil(FSendMessages);
+  //
+  while (FPubMessages.Count>0) do TMQTTMessage(FPubMessages.Pop).Free;
+  FreeAndNil(FPubMessages);
+  //
+  while (FRecMessages.Count>0) do TMQTTMessage(FRecMessages.Pop).Free;
+  FreeAndNil(FRecMessages);
+  //
+  FreeAndNil(FSubscribeList);
+  FreeAndNil(FCritSection);
+  FreeAndNil(FTCP);
 
- while (FPubMessages.Count>0) do TMQTTMessage(FPubMessages.Pop).Free;
- FreeAndNil(FPubMessages);
-
- while (FRecMessages.Count>0) do TMQTTMessage(FRecMessages.Pop).Free;
- FreeAndNil(FRecMessages);
- //
- FreeAndNil(FSubscribeList);
- FreeAndNil(FCritSection);
- FreeAndNil(FTCP);
+  FLog.Destroy;;
 end;
 
 // возвращает строку с добавленными в начале двумя байтами длинны
@@ -966,6 +977,11 @@ procedure TMQTTClient.DoOnError;
 begin
   if FOnError <> nil then
     FOnError(Self, FTCP.LastError, FTCP.LastErrorDesc);
+end;
+
+procedure TMQTTClient.AddLog(EventType : TEventType; const Msg : String);
+begin
+  FLog.Log(EventType,Msg);
 end;
 
 end.
