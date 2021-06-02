@@ -29,3 +29,38 @@
 [1-6-2021 09:25:37 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
 [1-6-2021 09:25:37 INFO   ] TMQTTClient: connection accepted
 [1-6-2021 09:25:37 DEBUG  ] TMQTTClient.SendCtrlPacket(SUBSCRIBE), FH:82 VHlen:2 PayloadLen:47
+[2-6-2021 09:07:08 DEBUG  ] TMQTTClient.Execute
+[2-6-2021 09:07:08 DEBUG  ] TMQTTClient.DoConnect
+[2-6-2021 09:07:08 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[2-6-2021 09:07:09 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.DoLogin
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:2
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.Pre-receiveControlPacket(CONNACK), QoS:160 FH:20 RL:10 Bytes:3
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[2-6-2021 09:07:09 INFO   ] TMQTTClient: connection accepted
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.SendCtrlPacket(SUBSCRIBE), FH:82 VHlen:2 PayloadLen:15
+[2-6-2021 09:07:09 DEBUG  ] TMQTTClient.Pre-receiveControlPacket(Reserved0), QoS:0 FH:00 RL:1 Bytes:0
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.Execute
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.DoConnect
+[2-6-2021 09:10:06 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[2-6-2021 09:10:06 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.DoLogin
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:2
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.Pre-receiveControlPacket(CONNACK), QoS:160 FH:20 RL:10 Bytes:3
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[2-6-2021 09:10:06 INFO   ] TMQTTClient: connection accepted
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.SendCtrlPacket(SUBSCRIBE), FH:82 VHlen:2 PayloadLen:15
+[2-6-2021 09:10:06 DEBUG  ] TMQTTClient.Pre-receiveControlPacket(Reserved0), QoS:0 FH:00 RL:1 Bytes:0
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.Execute
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.DoConnect
+[2-6-2021 09:17:17 INFO   ] MQTTClient: connected to a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com.8883
+[2-6-2021 09:17:17 INFO   ] MQTTClient: SSL/TLS connection established, version: TLSv1.2
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.DoLogin
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.SendCtrlPacket(CONNECT), FH:10 VHlen:10 PayloadLen:2
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.Pre-receiveControlPacket(CONNACK), QoS:160 FH:20 RL:10 Bytes:3
+[2-6-2021 09:17:17 DEBUG  ] TMQTTClient.ReceiveControlPacket(CONNACK), QoS:0 FH:20 RL:2
+[2-6-2021 09:17:17 INFO   ] TMQTTClient: connection accepted
+[2-6-2021 09:17:25 DEBUG  ] TMQTTClient.SendCtrlPacket(PUBLISH), FH:30 VHlen:14 PayloadLen:23
+[2-6-2021 09:17:30 DEBUG  ] TMQTTClient.SendCtrlPacket(PUBLISH), FH:30 VHlen:14 PayloadLen:23
+[2-6-2021 09:17:33 INFO   ] TMQTTClient.DoDisconnect
+[2-6-2021 09:17:33 DEBUG  ] TMQTTClient.SendCtrlPacket(DISCONNECT), FH:E0 VHlen:0 PayloadLen:0

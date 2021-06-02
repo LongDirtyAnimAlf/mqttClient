@@ -432,6 +432,8 @@ procedure TMQTTClient.GetNextPacketId;
 begin
   Inc(FPacketId);
   if FPacketId = 0 then Inc(FPacketId);
+  Assert((FPacketId > Low(Word)), 'Message ID too low');
+  Assert((FPacketId < High(Word)), 'Message ID has gotten too big');
 end;
 
 procedure TMQTTClient.SendControlPacket(const Data: TControlPacket);
@@ -459,6 +461,9 @@ begin
   if not FTCP.CanReadEx(WaitTimeOut) then exit;
   if FTCP.WaitingDataEx <= 0 then raise MQTTException.Create('connection reset by peer');
   Data.FH:= FTCP.RecvByte(FTimeOut);
+  {$IFDEF DEBUG_MQTT}
+  AddLog(LOG_DEBUG, Format('TMQTTClient.Pre-receiveControlPacket(%s), QoS:%d FH:%.2x RL:%d Bytes:%d', [MQTTMessageType(Data.FH), Data.RQoS, Data.FH, RL, FTCP.WaitingDataEx]));
+  {$ENDIF}
   RL:= 0;
   Mul:= 1;
   repeat
