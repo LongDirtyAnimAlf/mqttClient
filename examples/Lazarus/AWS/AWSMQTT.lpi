@@ -25,7 +25,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir);..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>
-            <OtherUnitFiles Value="..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>
+            <OtherUnitFiles Value="..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\;..\..\..\mORMot2\src\net;..\..\..\mORMot2\src\core;..\..\..\mORMot2\src\lib"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>

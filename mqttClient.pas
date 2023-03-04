@@ -8,14 +8,16 @@
 interface
 
 uses
-  {$ifndef FPC}
+  {$ifdef MsWindows}
   Windows,
-  {$endif}
+  {$endif MsWindows}
   SysUtils, Classes, Contnrs, SyncObjs,
   {$ifdef FPC}
   eventlog,
   {$endif FPC}
-  BlckSock, NBlockSock, ssl_openssl;
+  //blcksock, NBlockSock,
+  NBlockSockFPC,
+  ssl_openssl;
 
 const
   MAXRecMessagesCount = 1000;
@@ -88,6 +90,7 @@ type
        FPassword: String;
        FTimeOut: Integer;
        FTCP: TTCPNBlockSocket;
+       //FTCP: TMQTTConnection;
        FConnected: Boolean;
        FLoggedIn: Boolean;
        FWillTopic: String;
@@ -374,6 +377,7 @@ begin
   FAddTimeStamp:= False;
   //
   FTCP:= TTCPNBlockSocket.Create;
+  //FTCP:= TMQTTConnection.Create;
   FTCP.ConnectQuantum:= 200;
   FTCP.RaiseExcept:= True;
   FTCP.Family:= SF_IP4;
@@ -504,6 +508,24 @@ begin
     FWaitPINGRESP:= True;
   end;
 end;
+
+{$ifdef MsWindows}
+function GetUniversalTime(var SystemTime: TSystemTime): Boolean;
+begin
+  windows.GetSystemTime(SystemTime);
+  Result:=True;
+end;
+{$endif MsWindows}
+
+function NowUTC: TDateTime;
+var
+  SystemTime: TSystemTime;
+begin
+  if not GetUniversalTime(SystemTime) then
+    GetLocalTime(SystemTime);
+  result := systemTimeToDateTime(SystemTime);
+end;
+
 
 function TMQTTClient.UTCTimeStamp: String;
 {$ifndef FPC}

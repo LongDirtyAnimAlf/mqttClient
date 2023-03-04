@@ -71,7 +71,7 @@ begin
   //MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/accepted');
   //MyMQTTClient.Subscribe('$aws/things/'+MyMQTTClient.ClientId+'/shadow/update/rejected');
 
-  //MyMQTTClient.Subscribe('SOHITClimate');
+  MyMQTTClient.Subscribe('SOHITClimate');
   MyMQTTClient.Start;
 end;
 

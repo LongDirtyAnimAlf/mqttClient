@@ -5,15 +5,12 @@ unit NBlockSock;
 interface
 
 uses
-  SysUtils,
-  blcksock;
-  //ssockets;
+  SysUtils, blcksock;
 
 type
   THookCheckConnectBreak = function(Sender: TObject; Time: Integer): Boolean of object;
 
   TTCPNBlockSocket = class(TTCPBlockSocket)
-  //TTCPNBlockSocket = class(TInetSocket)
   private
     FOnCheckConnectBreak: THookCheckConnectBreak;
     FConnectQuantum: Integer;
@@ -119,6 +116,5 @@ begin
   end;
   result:= RetVal;
 end;
-
 
 end.
