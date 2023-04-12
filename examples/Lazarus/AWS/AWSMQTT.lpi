@@ -30,6 +30,8 @@
           </SearchPaths>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
+            <TargetCPU Value="wasm32"/>
+            <TargetOS Value="wasi"/>
             <Optimizations>
               <OptimizationLevel Value="3"/>
             </Optimizations>
@@ -82,8 +84,8 @@
       <Filename Value="$NameOnly($(ProjFile))-$(TargetCPU)-$(TargetOS)-debug"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>
-      <OtherUnitFiles Value="..\..\..;C:\fpclazbydeluxe\wioterminal\ccr\synapse\"/>
+      <IncludeFiles Value="$(ProjOutDir);..\..\..\synapse"/>
+      <OtherUnitFiles Value="..\..\..\source;..\..\..\synapse"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

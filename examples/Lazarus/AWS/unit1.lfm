@@ -7,13 +7,13 @@ object Form1: TForm1
   ClientHeight = 414
   ClientWidth = 860
   OnDestroy = FormDestroy
-  LCLVersion = '2.1.0.0'
+  LCLVersion = '2.3.0.0'
   object Button1: TButton
     Left = 11
     Height = 39
     Top = 13
     Width = 117
-    Caption = 'Button1'
+    Caption = 'Connect'
     OnClick = Button1Click
     TabOrder = 0
   end
@@ -30,11 +30,12 @@ object Form1: TForm1
     TabOrder = 1
   end
   object Button2: TButton
-    Left = 18
-    Height = 56
+    Left = 11
+    Height = 40
     Top = 89
-    Width = 115
-    Caption = 'Button2'
+    Width = 117
+    Caption = 'Publish'
+    Enabled = False
     OnClick = Button2Click
     TabOrder = 2
   end

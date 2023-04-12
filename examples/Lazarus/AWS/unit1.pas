@@ -33,9 +33,6 @@ var
 
 implementation
 
-uses
-  ssl_openssl_lib;
-
 const
   LAB='General';
 
@@ -45,7 +42,7 @@ const
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  if (NOT IsSSLloaded) then InitSSLInterface;
+  //if (NOT IsSSLloaded) then InitSSLInterface;
   MyMQTTClient:=TMQTTClient.Create;
   MyMQTTClient.ClientId:='SOHIT_Climate_'+LAB;
   MyMQTTClient.Host:='a1imtw9krxr315-ats.iot.eu-west-1.amazonaws.com';

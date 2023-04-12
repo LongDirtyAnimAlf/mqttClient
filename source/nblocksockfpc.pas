@@ -32,9 +32,7 @@ type
     FErrorCode: Integer;
     FErrorMessage: string;
   published
-    {:Code of error. Value depending on used operating system}
     property ErrorCode: Integer read FErrorCode Write FErrorCode;
-    {:Human readable description of error.}
     property ErrorMessage: string read FErrorMessage Write FErrorMessage;
   end;
 
@@ -122,10 +120,19 @@ type
     property LastErrorDesc: string read FLastErrorDesc;
   end;
 
+
 implementation
 
 uses
-  sslbase{$ifdef UNIX},BaseUnix,netdb,errors{$endif}{$ifdef MSWINDOWS},winsock{$endif};
+  Tools,sslbase{$ifdef UNIX},termio,sockets,BaseUnix,netdb,errors{$endif}{$ifdef MSWINDOWS},winsock{$endif};
+
+{$IFDEF UNIX}
+const
+  ECONNABORTED=ESysECONNABORTED;
+  ETIMEDOUT=ESysETIMEDOUT;
+  EINPROGRESS=ESysEINPROGRESS;
+  EWOULDBLOCK=ESysEWOULDBLOCK;
+{$ENDIF}
 
 procedure TCustomSSL.SetSNIHost(aValue:string);
 begin
@@ -216,7 +223,7 @@ begin
   begin
     if ReadSocket then FDS:=PFRDS^;
     if WriteSocket then FDS:=PFWDS^;
-    result:=fpFD_ISSET(aNetClient.Socket.Handle, FDS);
+    result:=(fpFD_ISSET(aNetClient.Socket.Handle, FDS)>0);
   end;
 {$else}
 {$ifdef windows}
@@ -281,7 +288,13 @@ var
 begin
   result:=0;
   {$ifdef windows}
-  if ioctlsocket(aNetClient.Socket.Handle,DWORD(FIONREAD),{%H-}x) = 0 then
+  if (ioctlsocket(aNetClient.Socket.Handle,DWORD(FIONREAD),{%H-}x)=0) then
+  begin
+    result:=x;
+  end;
+  {$endif}
+  {$ifdef UNIX}
+  if (fpioctl(aNetClient.Socket.Handle,FIONREAD,{%H-}@x)>=0) then
   begin
     result:=x;
   end;
@@ -364,7 +377,7 @@ begin
   until (CW or (TryTime > ConnectTimeOut));
   if not CW then
   begin
-    FLastError := WSAETIMEDOUT;
+    FLastError := ETIMEDOUT;
     ExceptCheck;
     exit;
   end;
@@ -388,8 +401,8 @@ end;
 
 procedure TTCPNBlockSocket.ExceptCheck;
 begin
-  if (LastError <> 0) and (LastError <> WSAEINPROGRESS)
-    and (LastError <> WSAEWOULDBLOCK) then
+  if (LastError <> 0) and (LastError <> EINPROGRESS)
+    and (LastError <> EWOULDBLOCK) then
   begin
     {$ifdef UNIX}
     FLastErrorDesc:=StrError(LastError);
